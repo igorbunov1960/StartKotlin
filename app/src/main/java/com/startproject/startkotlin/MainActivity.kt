@@ -19,8 +19,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private val btnAddView: Button by lazy { btnAdd }
     private val btnReadView by lazy { btnRead }
     private val btnClearView by lazy { btnClear }
+    private val btnUpdateView by lazy { btnUpd }
+    private val btnDeleteView by lazy { btnDel }
     private val etNameView by lazy { etName }
     private val etEmailView by lazy { etEmail }
+    private val etIdView by lazy { etID }
 
     private lateinit var dbHelper: DBHelper
 
@@ -32,6 +35,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         btnAddView.setOnClickListener(this)
         btnReadView.setOnClickListener(this)
         btnClearView.setOnClickListener(this)
+        btnUpdateView.setOnClickListener(this)
+        btnDeleteView.setOnClickListener(this)
 
         dbHelper = DBHelper(this)
     }
@@ -43,6 +48,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
         val name = etNameView.text.toString()
         val email = etEmailView.text.toString()
+        val id = etID.text.toString()
 
         val db = dbHelper.writableDatabase
 
@@ -76,6 +82,23 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 Log.d(LOG_TAG, "--- Clear mytable: ---")
                 val clearCount = db.delete("mytable", null, null)
                 Log.d(LOG_TAG, "deleted rows count = $clearCount")
+            }
+            R.id.btnUpd -> {
+                if (!id.equals("", ignoreCase = true)) {
+                    Log.d(LOG_TAG, "--- Update mytable: ---")
+                    contentValues.put("name", name)
+                    contentValues.put("email", email)
+
+                    val updCount = db.update("mytable", contentValues, "id = ?", arrayOf(id))
+                    Log.d(LOG_TAG, "updated rows count = $updCount")
+                }
+            }
+            R.id.btnDel -> {
+                if (!id.equals("", ignoreCase = true)) {
+                    Log.d(LOG_TAG, "--- Delete from mytable: ---")
+                    val delCount = db.delete("mytable", "id = $id", null)
+                    Log.d(LOG_TAG, "deleted rows count = $delCount")
+                }
             }
         }
         dbHelper.close()
