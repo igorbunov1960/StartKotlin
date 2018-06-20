@@ -9,161 +9,93 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     internal val LOG_TAG = "myLogs"
 
-    val name = arrayOf("Китай", "США", "Бразилия", "Россия", "Япония",
-            "Германия", "Египет", "Италия", "Франция", "Канада")
-    val people = arrayOf(1400, 311, 195, 142, 128, 82, 80, 60, 66, 35)
-    val region = arrayOf( "Азия", "Америка", "Америка", "Европа", "Азия",
-            "Европа", "Африка", "Европа", "Европа", "Америка" )
+    // данные для таблицы должностей
+    val positionId = arrayOf( 1, 2, 3, 4 )
+    val positionName = arrayOf("Директор", "Программер", "Бухгалтер", "Охранник")
+    val positionSalary = arrayOf(15000, 13000, 10000, 8000)
 
-    val btnAllView by lazy { btnAll }
-    val btnFuncView by lazy { btnFunc }
-    val btnPeopleView by lazy { btnPeople }
-    val btnSortView by lazy { btnSort }
-    val btnGroupView by lazy { btnGroup }
-    val btnHavingView by lazy { btnHaving }
-    val etFuncView by lazy { etFunc }
-    val etPeopleView by lazy { etPeople }
-    val etRegionPeopleView by lazy { etRegionPeople }
-    val rgSortView by lazy { rgSort }
+    // данные для таблицы людей
+    internal var peopleName = arrayOf("Иван", "Марья", "Петр", "Антон", "Даша", "Борис", "Костя", "Игорь")
+    internal var peoplePosid = intArrayOf(2, 3, 2, 2, 3, 1, 2, 4)
 
-    private lateinit var dbHelper: DBHelper
-    private lateinit var db: SQLiteDatabase
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        btnAllView.setOnClickListener(this)
-        btnFuncView.setOnClickListener(this)
-        btnPeopleView.setOnClickListener(this)
-        btnSortView.setOnClickListener(this)
-        btnGroupView.setOnClickListener(this)
-        btnHavingView.setOnClickListener(this)
-        etFuncView
-        etPeopleView
-        etRegionPeopleView
-
-        dbHelper = DBHelper(this)
-        db = dbHelper.writableDatabase
-
-        var c = db.query("mytable", null, null, null, null, null, null)
-        if (c.count == 0) {
-            var contentValue = ContentValues()
-
-            for (i in 1..10) {
-                contentValue.put("name", name[i - 1])
-                contentValue.put("people", people[i - 1])
-                contentValue.put("region", region[i - 1])
-
-                Log.d(LOG_TAG, "id = " + db.insert("mytable", null, contentValue))
-            }
-        }
-        c.close()
-        dbHelper.close()
-        onClick(btnAllView)
-    }
-
-
-    override fun onClick(v: View) {
-        db = dbHelper.writableDatabase
-
-        var func = etFuncView.text.toString()
-        var peop = etPeopleView.text.toString()
-        var regPeop = etRegionPeopleView.text.toString()
-
-        var columns: Array<String>? = null
-        var selection: String? = null
-        var selectionArgs: Array<String>? = null
-        var groupBy: String? = null
-        var having: String? = null
-        var orderBy: String? = null
-
-        var c: Cursor? = null
-
-        when (v.id) {
-        // Все записи
-            R.id.btnAll -> {
-                Log.d(LOG_TAG, "--- Все записи ---")
-                c = db.query("mytable", null, null, null, null, null, null)
-            }
-        // Функция
-            R.id.btnFunc -> {
-                Log.d(LOG_TAG, "--- Функция $func ---")
-                columns = arrayOf(func)
-                c = db.query("mytable", columns, null, null, null, null, null)
-            }
-        // Население больше, чем
-            R.id.btnPeople -> {
-                Log.d(LOG_TAG, "--- Население больше $peop ---")
-                selection = "people > ?"
-                selectionArgs = arrayOf(peop)
-                c = db.query("mytable", null, selection, selectionArgs, null, null, null)
-            }
-        // Население по региону
-            R.id.btnGroup -> {
-                Log.d(LOG_TAG, "--- Население по региону ---")
-                columns = arrayOf("region", "sum(people) as people")
-                groupBy = "region"
-                c = db.query("mytable", columns, null, null, groupBy, null, null)
-            }
-        // Население по региону больше чем
-            R.id.btnHaving -> {
-                Log.d(LOG_TAG, "--- Регионы с населением больше " + regPeop
-                        + " ---")
-                columns = arrayOf("region", "sum(people) as people")
-                groupBy = "region"
-                having = "sum(people) > $regPeop"
-                c = db.query("mytable", columns, null, null, groupBy, having, null)
-            }
-        // Сортировка
-            R.id.btnSort -> {
-                // сортировка по
-                when (rgSort.checkedRadioButtonId) {
-                // наименование
-                    R.id.rName -> {
-                        Log.d(LOG_TAG, "--- Сортировка по наименованию ---")
-                        orderBy = "name"
-                    }
-                // население
-                    R.id.rPeople -> {
-                        Log.d(LOG_TAG, "--- Сортировка по населению ---")
-                        orderBy = "people"
-                    }
-                // регион
-                    R.id.rRegion -> {
-                        Log.d(LOG_TAG, "--- Сортировка по региону ---")
-                        orderBy = "region"
-                    }
-                }
-                c = db.query("mytable", null, null, null, null, null, orderBy)
-            }
-        }
-
+    internal fun logCursor(c: Cursor?) {
         if (c != null) {
             if (c.moveToFirst()) {
                 var str: String
                 do {
                     str = ""
                     for (cn in c.columnNames) {
-                        str += (cn + " = "
-                                + c.getString(c.getColumnIndex(cn)) + "; ")
+                        str += (cn + " = " + c.getString(c.getColumnIndex(cn)) + "; ")
                     }
                     Log.d(LOG_TAG, str)
-
                 } while (c.moveToNext())
             }
-            c.close()
         } else
             Log.d(LOG_TAG, "Cursor is null")
+    }
 
-        dbHelper.close()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        // Подключаемся к БД
+        val dbh = DBHelper(this)
+        val db = dbh.writableDatabase
+
+        // Описание курсора
+        var c: Cursor
+
+        // выводим в лог данные по должностям
+        Log.d(LOG_TAG, "--- Table position ---")
+        c = db.query("position", null, null, null, null, null, null)
+        logCursor(c)
+        c.close()
+        Log.d(LOG_TAG, "--- ---")
+
+        // выводим в лог данные по людям
+        Log.d(LOG_TAG, "--- Table people ---")
+        c = db.query("people", null, null, null, null, null, null)
+        logCursor(c)
+        c.close()
+        Log.d(LOG_TAG, "--- ---")
+
+        Log.d(LOG_TAG, "--- INNER JOIN with rawQuery---")
+        val sqlQuery = ("select PL.name as Name, PS.name as Position, salary as Salary "
+                + "from people as PL "
+                + "inner join position as PS "
+                + "on PL.posid = PS.id "
+                + "where salary > ?")
+        c = db.rawQuery(sqlQuery, arrayOf("12000"))
+        logCursor(c)
+        c.close()
+        Log.d(LOG_TAG, "--- ---")
+
+        // выводим результат объединения
+        // используем query
+        Log.d(LOG_TAG, "--- INNER JOIN with query---")
+        val table = "people as PL inner join position as PS on PL.posid = PS.id"
+        val columns = arrayOf("PL.name as Name", "PS.name as Position", "salary as Salary")
+        val selection = "salary < ?"
+        val selectionArgs = arrayOf("12000")
+        c = db.query(table, columns, selection, selectionArgs, null, null, null)
+        logCursor(c)
+        c.close()
+        Log.d(LOG_TAG, "--- ---")
+
+        // закрываем БД
+        dbh.close()
+
+
+    }
+
+    override fun onClick(v: View?) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     inner class DBHelper(context: Context): SQLiteOpenHelper(context, "myDB", null, 1) {
@@ -171,9 +103,37 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         override fun onCreate(db: SQLiteDatabase?) {
             Log.d(LOG_TAG, "--- onCreate database ---")
             // создаем таблицу с полями
-            db?.execSQL("create table mytable ("
-                    + "id integer primary key autoincrement," + "name text,"
-                    + "people integer," + "region text" + ");")
+            val cv = ContentValues()
+
+            // создаем таблицу должностей
+            db?.execSQL("create table position ("
+                    + "id integer primary key,"
+                    + "name text," + "salary integer"
+                    + ");")
+
+            // заполняем ее
+            for (i in positionId.indices) {
+                cv.clear()
+                cv.put("id", positionId[i])
+                cv.put("name", positionName[i])
+                cv.put("salary", positionSalary[i])
+                db?.insert("position", null, cv)
+            }
+
+            // создаем таблицу людей
+            db?.execSQL("create table people ("
+                    + "id integer primary key autoincrement,"
+                    + "name text,"
+                    + "posid integer"
+                    + ");")
+
+            // заполняем ее
+            for (i in peopleName.indices) {
+                cv.clear()
+                cv.put("name", peopleName[i])
+                cv.put("posid", peoplePosid[i])
+                db?.insert("people", null, cv)
+            }
         }
 
         override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
